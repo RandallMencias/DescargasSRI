@@ -1,6 +1,7 @@
 import time
 import os
 import shutil
+import re
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -57,9 +58,9 @@ class SRIDownloader:
             # Check for .crdownload files (Chrome's temporary download files)
             downloading = list(self.temp_dir.glob("*.crdownload"))
             if not downloading:
-                time.sleep(0.5)  # Small buffer to ensure file is fully written
+                time.sleep(0.015)  # Small buffer to ensure file is fully written
                 return True
-            time.sleep(0.5)
+            time.sleep(0.25)
         return False
 
     def move_downloaded_files(self, factura_number):
@@ -87,7 +88,9 @@ class SRIDownloader:
                     continue
 
                 # Use factura number as filename
-                clean_name = "".join(c for c in factura_number if c.isalnum() or c in ('-', '_')).strip()
+                clean_name = "".join(c for c in factura_number if c.isalnum() or c in ('-', '_', ' ')).strip()
+                # Insert space between 'Facturas' and 'Number' if needed
+                clean_name = re.sub(r'(Facturas)(Number)', r'\1 \2', clean_name)
                 if not clean_name:
                     clean_name = f"documento_{int(time.time())}"
 
@@ -160,8 +163,8 @@ class SRIDownloader:
 
             # Small delay between downloads
             time.sleep(0.5)
-            if index == 0:
-                input(f"Have you accepted the download multiple files prompt? Press Enter to continue...{index}")
+            # if index == 0:
+            #     input(f"Have you accepted the download multiple files prompt? Press Enter to continue...{index}")
             # Download PDF
             try:
                 pdf_link = self.driver.find_element(By.ID, pdf_link_id)
@@ -178,6 +181,9 @@ class SRIDownloader:
                 print(f"  ⚠️ PDF link not found")
             except Exception as e:
                 print(f"  ⚠️ PDF error: {e}")
+
+            if index == 0:
+                input(f"Have you accepted the download multiple files prompt? Press Enter to continue...{index}")
 
             # Move downloaded files to organized folders
             if downloads_successful:
